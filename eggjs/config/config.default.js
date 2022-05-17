@@ -51,7 +51,7 @@ module.exports = appInfo => {
     secret: 'balabala',
   }
   // 设置白名单 任何文件都能传方便测试
-  config.multipar = {
+  config.multipart = {
     mode: 'file',
     whitelist: () => true,
   }

@@ -1,5 +1,6 @@
 'use strict'
 const svgCaptcha = require('svg-captcha')
+// 扩展fs, 方便移动文件
 const fse = require('fs-extra')
 // const path = require('path')
 const BaseController = require('./base')
@@ -42,13 +43,19 @@ class UtilController extends BaseController {
 
   // 文件上传
   async uploadfile() {
-    console.log(this.ctx.request, '====================')
-    const file = this.ctx.request.files[0]
-    // const {
-    //   name,
-    // } = this.ctx.request.body
+    const {
+      ctx
+    } = this
+
+    const file = ctx.request.files[0]
+    const {
+      name,
+    } = ctx.request.body
+
+    // console.log(name,file);
     await fse.move(file.filepath, this.config.UPLOAD_DIR + '/' + file.filename)
     this.success({
+      // url: 'test'
       url: `/public/${file.filename}`,
     })
   }
