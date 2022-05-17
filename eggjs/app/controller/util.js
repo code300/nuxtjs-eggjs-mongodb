@@ -19,6 +19,27 @@ class UtilController extends BaseController {
     this.ctx.response.type = 'image/svg+xml'
     this.ctx.body = captcha.data
   }
+
+  // 需求分析：发送邮件是通用功能  发送验证码是业务功能
+  async sendcode() {
+    const {
+      ctx,
+    } = this
+    const email = ctx.query.email
+    const code = Math.random().toString().slice(2, 6)
+    console.log('邮箱：' + email + '验证码：' + code)
+    ctx.session.emailcode = code
+    const subject = '邮箱验证码'
+    const text = ''
+    const html = `<h2><a href="www.baidu.com"><space>${code}</space></a></h2>`
+    const hasSend = await this.service.tools.sendMail(email, subject, text, html)
+    if (hasSend) {
+      this.message('发送成功')
+    } else {
+      this.error('发送失败')
+    }
+  }
+
   // 文件上传
   async uploadfile() {
     console.log(this.ctx.request, '====================')

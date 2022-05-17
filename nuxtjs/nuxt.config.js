@@ -1,7 +1,7 @@
 export default {
   // Global page headers: https://go.nuxtjs.dev/config-head
   head: {
-    title: 'front',
+    title: '管理系统',
     htmlAttrs: {
       lang: 'en'
     },
@@ -15,6 +15,10 @@ export default {
       { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }
     ]
   },
+  /*
+  ** Customize the progress-bar color
+  */
+  loading: { color: '#fff' },
 
   // Global CSS: https://go.nuxtjs.dev/config-css
   css: [
@@ -37,14 +41,27 @@ export default {
   // Modules: https://go.nuxtjs.dev/config-modules
   modules: [
     '@nuxtjs/proxy',
-    // '@nuxtjs/axios',
+    '@nuxtjs/axios',
   ],
+  axios: {
+    // 开启代理 (如果需要判断线上线下环境，可以通过 process.env.NODE_ENV !== 'production' 来判断)
+    // proxy: true,
+    // 给请求 url 加个前缀 /api，如果这项不配置，则需要手动添加到请求链接前面
+    // 如果是多个代理的时候，则不需要配置，走手动添加代理前缀
+    // prefix: '/api',
+    // 跨域请求时是否需要使用凭证
+    // credentials: true
+  },
   proxy: {
-    "/api/": {
+    "/api": {
       target: "http://localhost:7001",
       secure: false,
+      // changeOrigin: true,
       pathRewrite: {
-        "^/api": ""
+        // 单个配置是否跨域
+        // changeOrigin: true
+        // 把 '/api' 替换成 '/'，具体需要替换为 '' 还是 '/' 看自己习惯
+        "^/api": "/"
       }
     }
   },
@@ -61,5 +78,7 @@ export default {
   // Build Configuration: https://go.nuxtjs.dev/config-build
   build: {
     transpile: [/^element-ui/],
+    // 防止重复打包
+    // vendor: ['axios']
   },
 }

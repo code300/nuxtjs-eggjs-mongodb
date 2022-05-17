@@ -1,5 +1,6 @@
 <template>
   <div class="login bg-image">
+    <div class="mask"></div>
     <div class="form-box">
       <el-form
         class="login-form"
@@ -99,7 +100,7 @@ export default {
           await this.$http
             .post('/user/login', formParams)
             .then((res) => {
-              console.log(res,'999');
+              console.log(res, '999')
               // res.code == 0 登录成功
               if (res.data.code == 0) {
                 // 登录成功返回token
@@ -121,7 +122,7 @@ export default {
 }
 </script>
 
-<style>
+<style lang="scss">
 /* login背景图 */
 /* form的父元素 */
 /* form表单 */
@@ -148,14 +149,7 @@ export default {
   border-radius: 5px;
 } */
 
-.bg-image {
+.login {
   background: url('../static/login.jpeg');
-}
-.captcha {
-  width: 280px;
-  height: 40px;
-  margin-bottom: 22px;
-  display: flex;
-  margin-left: 80px;
 }
 </style>

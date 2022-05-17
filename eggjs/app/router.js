@@ -12,7 +12,8 @@ module.exports = app => {
   // const jwt = app.middleware.jwt(app)
   // 验证码
   router.get('/captcha', controller.util.captcha)
-  // router.get('/sendcode', controller.util.sendcode)
+  // 邮箱验证码
+  router.get('/sendcode', controller.util.sendcode)
   // 文件上传
   router.post('/uploadfile', controller.util.uploadfile)
   // prefix: '/user' 路由前缀
@@ -33,7 +34,5 @@ module.exports = app => {
     router.get('/info', info)
   })
 
-
-  
 
 }

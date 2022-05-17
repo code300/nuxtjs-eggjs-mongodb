@@ -75,10 +75,16 @@ class UserController extends BaseController {
       password,
       captcha,
       nickname,
+      emailcode,
     } = ctx.request.body
 
     if (captcha.toUpperCase() !== ctx.session.captcha.toUpperCase()) {
       return this.error('验证码错误')
+    }
+
+    // 邮箱验证码
+    if (emailcode !== ctx.session.emailcode) {
+      return this.error('邮箱验证码错误')
     }
 
     if (await this.checkEmail(email)) {
