@@ -11,7 +11,7 @@ const transporter = nodemailer.createTransport({
   auth: {
     user: userEmail,
     // pass: '3325070366Zcl'
-    pass: 'PZYBDRZRMHBRAWUY',
+    pass: 'PZYBDRZRMHBRAWUY', // 邮箱设置开启imap/smtp 或 pop3/smtp获得授权码
   },
 })
 

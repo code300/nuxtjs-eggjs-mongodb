@@ -102,9 +102,10 @@ export default {
             .then((res) => {
               console.log(res, '999')
               // res.code == 0 登录成功
-              if (res.data.code == 0) {
+              if (res.code == 0) {
                 // 登录成功返回token
                 this.$message.success('登录成功')
+                localStorage.setItem('token', res.data.token)
                 setTimeout(() => {
                   this.$router.push('/')
                 }, 500)

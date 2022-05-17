@@ -8,8 +8,9 @@ module.exports = app => {
     controller,
   } = app
 
+  const jwt = app.middleware.jwt(app)
+
   router.get('/', controller.home.index)
-  // const jwt = app.middleware.jwt(app)
   // 验证码
   router.get('/captcha', controller.util.captcha)
   // 邮箱验证码
@@ -31,7 +32,8 @@ module.exports = app => {
     router.post('/login', login)
     router.post('/register', register)
     router.get('/verify', verify)
-    router.get('/info', info)
+    // 针对需要token的页面 设置jwt,会在header携带token
+    router.get('/info', jwt, info)
   })
 
 

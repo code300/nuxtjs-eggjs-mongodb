@@ -7,7 +7,7 @@ module.exports = app => {
   const UserSchema = new Schema({
     __v: {
       type: Number,
-      select: false,
+      select: false,//设置false不会被查询 返回前端
     },
     email: {
       type: String,
@@ -16,7 +16,7 @@ module.exports = app => {
     password: {
       type: String,
       required: true,
-      select: false,
+      select: false, //设置false不会被查询 返回前端
     },
     nickname: {
       type: String,
@@ -30,6 +30,6 @@ module.exports = app => {
   }, {
     timestamps: true,
   })
-  // 第三个参数不写默认是User的复试，具体写入到的数据库表名称
+  // 第三个参数不写默认是第一个参数User的复试，具体写入到数据库的表名称
   return mongoose.model('User', UserSchema, 'User')
 }

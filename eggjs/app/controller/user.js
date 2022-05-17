@@ -50,7 +50,7 @@ class UserController extends BaseController {
       _id: user._id,
       email,
     }, app.config.jwt.secret, {
-      expiresIn: '1h',
+      expiresIn: '5m',
     })
     this.success({
       token,
@@ -111,15 +111,18 @@ class UserController extends BaseController {
 
   async verify() {
     console.log(99)
+    // 检查用户是否存在
   }
 
   async info() {
     const {
       ctx,
     } = this
+
     const {
       email,
     } = ctx.state
+
     const user = await this.checkEmail(email)
     this.success(user)
   }
