@@ -27,6 +27,7 @@
 </template>
 
 <script>
+import { isGif, isPng, isJpg } from '../utils'
 export default {
   mounted() {
     this.bindEvents()
@@ -38,8 +39,19 @@ export default {
     }
   },
   methods: {
+    async isImage(file) {
+      return (await isGif(file)) || (await isPng(file)) || (await isJpg(file))
+    },
     // 提交请求 发送文件到后端
     async uploadFile() {
+      const isImage = await this.isImage(this.file)
+      if (!isImage) {
+        console.log('格式错误')
+      } else {
+        console.log('格式正确')
+      }
+
+      return
       const form = new FormData()
       form.append('name', 'file')
       form.append('file', this.file)
@@ -106,8 +118,8 @@ export default {
     // }
   }
   /deep/ .el-progress {
-    .el-progress-bar__innerText{
-      color:black
+    .el-progress-bar__innerText {
+      color: black;
     }
     margin-top: 20px;
   }
