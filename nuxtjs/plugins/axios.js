@@ -4,7 +4,7 @@ import {
   MessageBox
 } from 'element-ui'
 let service = axios.create({
-  timeout: 5000,
+  // timeout: 5000,
   // api前缀
   baseURL: '/api'
 })
