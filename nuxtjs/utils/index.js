@@ -40,3 +40,46 @@ export const isGif = async (file) => {
     const isgif = (ret == "47 49 46 38 39 61") || (ret == "47 49 46 38 37 61")
     return isgif
 }
+
+/**
+ * @description: 将上传的大文件切片,创建文件片段
+ * @param file 上传的文件
+ * @param CHUNK_SIZE 文件片段的大小即颗粒度
+ * @return {*}
+ */
+export const createFileChunk = (file, size = CHUNK_SIZE) => {
+    const chunks = []
+    let cur = 0
+    while (cur < file.size) {
+        chunks.push({
+            index: cur,
+            file: file.slice(cur, cur + size)
+        })
+        cur += size
+    }
+    return chunks
+}
+/**
+ * @description: 利用浏览器空闲时间 重新创建一个进程计算Hash值
+ * @param chunks    文件片段
+ * @param hashProgress 计算的hash值进度条
+ * @return {*}
+ */
+export const calculateHashWorker = async (chunks, hashProgress) => {
+    return new Promise(resolve => {
+        const worker = new Worker('./hash.js')
+        worker.postMessage({
+            chunks: chunks
+        })
+        worker.onmessage = e => {
+            const {
+                progress,
+                hash
+            } = e.data
+            hashProgress = Number(progress.toFixed(2))
+            if (hash) {
+                resolve(hash)
+            }
+        }
+    })
+}

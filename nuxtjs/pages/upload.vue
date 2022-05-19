@@ -17,6 +17,14 @@
         :stroke-width="26"
       ></el-progress>
     </div>
+    <div class="progress-hash">
+      <p>计算hashProgress</p>
+      <el-progress
+        :text-inside="true"
+        :percentage="hashProgress"
+        :stroke-width="26"
+      ></el-progress>
+    </div>
     <div class="upload-btn-box">
       <el-button
         type="primary"
@@ -27,7 +35,16 @@
 </template>
 
 <script>
-import { isGif, isPng, isJpg } from '../utils'
+import {
+  isGif,
+  isPng,
+  isJpg,
+  createFileChunk,
+  calculateHashWorker,
+} from '../utils'
+import sparkMD5 from 'spark-md5'
+// 文件切成单片的颗粒度
+const CHUNK_SIZE = 10 * 1024 * 1024
 export default {
   mounted() {
     this.bindEvents()
@@ -36,21 +53,27 @@ export default {
     return {
       file: null,
       uploadProgress: 0,
+      hashProgress: 0,
+      chunks: [],
     }
   },
   methods: {
+    // 根据业务需求 增加图片格式的判断
     async isImage(file) {
       return (await isGif(file)) || (await isPng(file)) || (await isJpg(file))
     },
     // 提交请求 发送文件到后端
     async uploadFile() {
-      const isImage = await this.isImage(this.file)
-      if (!isImage) {
-        console.log('格式错误')
-      } else {
-        console.log('格式正确')
-      }
-
+      // const isImage = await this.isImage(this.file)
+      // if (!isImage) {
+      //   console.log('格式错误')
+      // } else {
+      //   console.log('格式正确')
+      // }
+      this.chunks = createFileChunk(this.file, CHUNK_SIZE)
+      const hash = await calculateHashWorker(this.chunks, this.hashProgress)
+      console.log(this.chunks,'chunks');
+      console.log('文件hash', hash)
       return
       const form = new FormData()
       form.append('name', 'file')
