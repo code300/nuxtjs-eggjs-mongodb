@@ -41,10 +41,12 @@ import {
   isJpg,
   createFileChunk,
   calculateHashWorker,
+  calculateHashIdle,
 } from '../utils'
 import sparkMD5 from 'spark-md5'
 // 文件切成单片的颗粒度
-const CHUNK_SIZE = 10 * 1024 * 1024
+// const CHUNK_SIZE = 10 * 1024 * 1024   //10M/片
+const CHUNK_SIZE = 0.1 * 1024 * 1024 //0.1M/片
 export default {
   mounted() {
     this.bindEvents()
@@ -71,9 +73,16 @@ export default {
       //   console.log('格式正确')
       // }
       this.chunks = createFileChunk(this.file, CHUNK_SIZE)
-      const hash = await calculateHashWorker(this.chunks, this.hashProgress)
-      console.log(this.chunks,'chunks');
-      console.log('文件hash', hash)
+      // const hashWorker = await calculateHashWorker(this.chunks, this.hashProgress)
+      const hashIdle = await calculateHashIdle(
+        sparkMD5,
+        this.chunks,
+        this.hashProgress
+      )
+      // console.log(this.chunks, 'chunks')
+      // 上传同一个文件 web-worker和时间切片两种方式计算的md5的hash值一样 证明计算方式没问题
+      // console.log('hashWorker:dc45def783745fb3b9ddd53de41d46aa', hashWorker)
+      console.log('hashIdle:dc45def783745fb3b9ddd53de41d46aa', hashIdle)
       return
       const form = new FormData()
       form.append('name', 'file')

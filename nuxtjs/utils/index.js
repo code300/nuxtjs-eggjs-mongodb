@@ -60,12 +60,16 @@ export const createFileChunk = (file, size = CHUNK_SIZE) => {
     return chunks
 }
 /**
- * @description: 利用浏览器空闲时间 重新创建一个进程计算Hash值
+ * @description: BGL 利用浏览器空闲时间 重新创建一个进程web-Worker计算md5的Hash值
+ * 上传同一个文件 web-worker和window.requestIdleCallback(workLoop)
+ * 两种方式计算的md5的hash值一样 证明计算方式没问题
  * @param chunks    文件片段
  * @param hashProgress 计算的hash值进度条
  * @return {*}
  */
-export const calculateHashWorker = async (chunks, hashProgress) => {
+export const calculateHashWorker = async (chunks = [], hashProgress = 0) => {
+    // const chunks = chunks || []
+    // const hashProgress = hashProgress || 0
     return new Promise(resolve => {
         const worker = new Worker('./hash.js')
         worker.postMessage({
@@ -81,5 +85,44 @@ export const calculateHashWorker = async (chunks, hashProgress) => {
                 resolve(hash)
             }
         }
+    })
+}
+/**
+ * @description: React中Fiber原理 时间切片原理计算md5的hash值
+ * 上传同一个文件 web-worker和window.requestIdleCallback(workLoop)
+ * 两种方式计算的md5的hash值一样 证明计算方式没问题
+ * @return {*}
+ */
+export const calculateHashIdle = async (sparkMD5, chunks = [], hashProgress = 0) => {
+    // const chunks = chunks || []
+    // const hashProgress = hashProgress || 0
+    return new Promise(resolve => {
+        const spark = new sparkMD5.ArrayBuffer()
+        let count = 0
+        const appendToSpark = async file => {
+            return new Promise(resolve => {
+                const reader = new FileReader()
+                reader.readAsArrayBuffer(file)
+                reader.onload = e => {
+                    spark.append(e.target.result)
+                    resolve()
+                }
+            })
+        }
+        const workLoop = async (deadline) => {
+            while (count < chunks.length && deadline.timeRemaining() > 1) {
+                // 空闲时间 有任务时
+                await appendToSpark(chunks[count].file)
+                count++
+                if (count < chunks.length) {
+                    hashProgress = Number((100 * count) / chunks.length).toFixed(2)
+                } else {
+                    hashProgress = 100
+                    resolve(spark.end())
+                }
+            }
+            window.requestIdleCallback(workLoop)
+        }
+        window.requestIdleCallback(workLoop)
     })
 }
