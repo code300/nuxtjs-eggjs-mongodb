@@ -47,16 +47,16 @@
         >
           <div
             :class="{
-            'uploading':100>chunk.progress>0,
+            'uploading':chunk.progress>0 && chunk.progress<100,
             'success':chunk.progress==100,
             'error':chunk.progress<0
           }"
-            :style="{height:chunks.progress+'%'}"
+            :style="{height:chunk.progress+'%'}"
           >
             <i
               class="el-icon-loading"
               style="color:#f56c6c"
-              v-if="100>chunk.progress>0"
+              v-if="chunk.progress>0 && chunk.progress<100"
             ></i>
           </div>
         </div>
@@ -188,8 +188,8 @@ export default {
       this.chunks = chunks.map((chunk, index) => {
         // 切片的 name = hash + index 命名
         const name = hash + '-' + index
-        // return还可以加文件type
-        return { name, hash, index, chunk: chunk.file }
+        // return还可以加文件type, 手动添加属性和默认值progress: 0
+        return { name, hash, index, chunk: chunk.file, progress: 0 }
       })
       // 发请求
       const requests = this.chunks
@@ -208,12 +208,12 @@ export default {
           this.$http.post('/uploadfile', form, {
             onUploadProgress: (progress) => {
               // 是每个切片的进度条，整体的进度条需要计算出来
+              // console.log(this.chunks)
+              // console.log(progress)
               this.chunks[index].progress = Number(
                 ((progress.loaded / progress.total) * 100).toFixed(2)
               )
             },
-          }).then(()=>{
-            console.log(this.chunks,'nnn');
           })
         })
       // @todo 并发量控制
