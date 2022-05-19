@@ -2,7 +2,7 @@
 const svgCaptcha = require('svg-captcha')
 // 扩展fs, 方便移动文件
 const fse = require('fs-extra')
-// const path = require('path')
+const path = require('path')
 const BaseController = require('./base')
 
 class UtilController extends BaseController {
@@ -41,7 +41,25 @@ class UtilController extends BaseController {
     }
   }
 
-  // 文件上传
+  // // 文件上传--整文件
+  // async uploadfile() {
+  //   const {
+  //     ctx
+  //   } = this
+
+  //   const file = ctx.request.files[0]
+  //   const {
+  //     name,
+  //   } = ctx.request.body
+
+  //   // console.log(name,file);
+  //   await fse.move(file.filepath, this.config.UPLOAD_DIR + '/' + file.filename)
+  //   this.success({
+  //     // url: 'test'
+  //     url: `/public/${file.filename}`,
+  //   })
+  // }
+  // 文件上传--切片文件
   async uploadfile() {
     const {
       ctx
@@ -50,14 +68,20 @@ class UtilController extends BaseController {
     const file = ctx.request.files[0]
     const {
       name,
+      hash
     } = ctx.request.body
 
+    const chunkPath = path.resolve(this.config.UPLOAD_DIR, hash)
+    // const filePath = path.resolve()  //切片合并之后，最终存储的位置
+
+
+    if (!fse.existsSync(chunkPath)) {
+      await fse.mkdir(chunkPath)
+    }
+
     // console.log(name,file);
-    await fse.move(file.filepath, this.config.UPLOAD_DIR + '/' + file.filename)
-    this.success({
-      // url: 'test'
-      url: `/public/${file.filename}`,
-    })
+    await fse.move(file.filepath, `${chunkPath}/${name}`)
+    this.message('切片上传成功')
   }
 }
 

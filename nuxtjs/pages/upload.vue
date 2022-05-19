@@ -33,6 +33,9 @@
       别的数字 方块高度显示
        -->
       <!-- 尽可能让方块进度条看起来像正方形10=4*4 9=3*3 -->
+      <!-- <pre>
+        {{chunks | json}}
+      </pre> -->
       <div
         class="cube-container"
         :style="{width:cubeWidth+'px'}"
@@ -42,15 +45,18 @@
           v-for="chunk in chunks"
           :key="chunk.name"
         >
-          <div :class="{
-            'uploading':chunk.progress>0&&chunk.progress<100,
+          <div
+            :class="{
+            'uploading':100>chunk.progress>0,
             'success':chunk.progress==100,
             'error':chunk.progress<0
-          }">
+          }"
+            :style="{height:chunks.progress+'%'}"
+          >
             <i
               class="el-icon-loading"
               style="color:#f56c6c"
-              v-if="chunk.progress=100 || chunk.progress<100"
+              v-if="100>chunk.progress>0"
             ></i>
           </div>
         </div>
@@ -199,15 +205,19 @@ export default {
         })
         // 每个切片的进度条
         .map((form, index) => {
-          this.$http.post('/uploadfile', {
+          this.$http.post('/uploadfile', form, {
             onUploadProgress: (progress) => {
               // 是每个切片的进度条，整体的进度条需要计算出来
               this.chunks[index].progress = Number(
                 ((progress.loaded / progress.total) * 100).toFixed(2)
               )
             },
+          }).then(()=>{
+            console.log(this.chunks,'nnn');
           })
         })
+      // @todo 并发量控制
+      await Promise.all(requests)
     },
     // 文件上传方案1--正常整文件上传
     async uploadUnchunks() {
