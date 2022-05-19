@@ -42,6 +42,7 @@ import {
   createFileChunk,
   calculateHashWorker,
   calculateHashIdle,
+  calculateHashSample,
 } from '../utils'
 import sparkMD5 from 'spark-md5'
 // 文件切成单片的颗粒度
@@ -72,17 +73,30 @@ export default {
       // } else {
       //   console.log('格式正确')
       // }
+      // 上传同一个文件 web-worker/时间切片/抽样等方式计算的md5的hash值一样 证明计算方式没问题
+      // 文件切片 可以控制文件片段的颗粒度大小CHUNK_SIZE
       this.chunks = createFileChunk(this.file, CHUNK_SIZE)
-      // const hashWorker = await calculateHashWorker(this.chunks, this.hashProgress)
+      // web-worker方式计算md5的hash值
+      const hashWorker = await calculateHashWorker(
+        this.chunks,
+        this.hashProgress
+      )
+      // 时间切片方式计算md5的hash值
       const hashIdle = await calculateHashIdle(
         sparkMD5,
         this.chunks,
         this.hashProgress
       )
-      // console.log(this.chunks, 'chunks')
-      // 上传同一个文件 web-worker和时间切片两种方式计算的md5的hash值一样 证明计算方式没问题
-      // console.log('hashWorker:dc45def783745fb3b9ddd53de41d46aa', hashWorker)
-      console.log('hashIdle:dc45def783745fb3b9ddd53de41d46aa', hashIdle)
+      // 抽样方式计算md5的hash值
+      const hashSample = await calculateHashSample(
+        sparkMD5,
+        this.file,
+        this.hashProgress
+      )
+      console.log(this.chunks, 'chunks')
+      console.log('hashWorker:', hashWorker)
+      console.log('hashIdle:', hashIdle)
+      console.log('hashSample:', hashSample)
       return
       const form = new FormData()
       form.append('name', 'file')

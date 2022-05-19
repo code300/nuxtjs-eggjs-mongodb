@@ -42,12 +42,13 @@ export const isGif = async (file) => {
 }
 
 /**
- * @description: 将上传的大文件切片,创建文件片段
+ * @description: 
  * @param file 上传的文件
  * @param CHUNK_SIZE 文件片段的大小即颗粒度
  * @return {*}
  */
-export const createFileChunk = (file, size = CHUNK_SIZE) => {
+// 将上传的大文件切片,创建文件片段 即颗粒度
+export const createFileChunk = (file, size) => {
     const chunks = []
     let cur = 0
     while (cur < file.size) {
@@ -60,16 +61,13 @@ export const createFileChunk = (file, size = CHUNK_SIZE) => {
     return chunks
 }
 /**
- * @description: BGL 利用浏览器空闲时间 重新创建一个进程web-Worker计算md5的Hash值
- * 上传同一个文件 web-worker和window.requestIdleCallback(workLoop)
- * 两种方式计算的md5的hash值一样 证明计算方式没问题
+ * @description: 
  * @param chunks    文件片段
  * @param hashProgress 计算的hash值进度条
  * @return {*}
  */
+//  BGL 利用浏览器空闲时间 重新创建一个进程web-Worker计算md5的Hash值
 export const calculateHashWorker = async (chunks = [], hashProgress = 0) => {
-    // const chunks = chunks || []
-    // const hashProgress = hashProgress || 0
     return new Promise(resolve => {
         const worker = new Worker('./hash.js')
         worker.postMessage({
@@ -87,15 +85,8 @@ export const calculateHashWorker = async (chunks = [], hashProgress = 0) => {
         }
     })
 }
-/**
- * @description: React中Fiber原理 时间切片原理计算md5的hash值
- * 上传同一个文件 web-worker和window.requestIdleCallback(workLoop)
- * 两种方式计算的md5的hash值一样 证明计算方式没问题
- * @return {*}
- */
+//  React中Fiber原理 时间切片方式计算md5的hash值
 export const calculateHashIdle = async (sparkMD5, chunks = [], hashProgress = 0) => {
-    // const chunks = chunks || []
-    // const hashProgress = hashProgress || 0
     return new Promise(resolve => {
         const spark = new sparkMD5.ArrayBuffer()
         let count = 0
@@ -124,5 +115,39 @@ export const calculateHashIdle = async (sparkMD5, chunks = [], hashProgress = 0)
             window.requestIdleCallback(workLoop)
         }
         window.requestIdleCallback(workLoop)
+    })
+}
+// 抽样方式计算MD5hash值
+export const calculateHashSample = (sparkMD5, file, hashProgress) => {
+    return new Promise(resolve => {
+        const spark = new sparkMD5.ArrayBuffer()
+        const reader = new FileReader()
+        // const file = file
+        const size = file.size
+        const offset = 2 * 1024 * 1024
+        // 第一个2M 最后一个区块数据全要
+        let chunks = [file.slice(0, offset)]
+        let cur = offset
+        while (cur < size) {
+            // 中间的，取前中后各两个字节
+            if (cur + offset >= size) {
+                // 最后一个区块
+                chunks.push(file.slice(cur, cur + offset))
+            } else {
+                // 中间的区块
+                const mid = cur + offset / 2
+                const end = cur + offset
+                chunks.push(file.slice(cur, cur + 2))
+                chunks.push(file.slice(mid, mid + 2))
+                chunks.push(file.slice(end - 2, end))
+            }
+            cur += offset
+        }
+        reader.readAsArrayBuffer(new Blob(chunks))
+        reader.onload = e => {
+            spark.append(e.target.result)
+            hashProgress = 100
+            resolve(spark.end())
+        }
     })
 }
