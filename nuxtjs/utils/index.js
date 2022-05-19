@@ -118,7 +118,11 @@ export const calculateHashIdle = async (sparkMD5, chunks = [], hashProgress = 0)
     })
 }
 // 抽样方式计算MD5hash值
-export const calculateHashSample = (sparkMD5, file, hashProgress) => {
+export const calculateHashSample = (sparkMD5, file, hashProgress = 0) => {
+    // 布隆过滤器，判断一个数据是否存在
+    // 1G的文件抽样后 5M以内
+    // hash一样，文件不一定一样
+    // hash不一样，文件一定不一样
     return new Promise(resolve => {
         const spark = new sparkMD5.ArrayBuffer()
         const reader = new FileReader()
