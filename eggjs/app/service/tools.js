@@ -65,6 +65,8 @@ class ToolService extends Service {
     await Promise.all(
       files.map((file, index) => {
         // file 切片文件(二进制流文件) eggjs/app/public/hash/hash-index 文件
+        // 将切片file写入到目标位置dest
+        // size === CHUNK_SIZE === 1*1024*1024(1M/片)
         pipStream(file, fse.createWriteStream(dest, {
           start: index * size,
           end: (index + 1) * size,

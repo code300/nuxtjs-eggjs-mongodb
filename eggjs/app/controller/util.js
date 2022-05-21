@@ -87,6 +87,7 @@ class UtilController extends BaseController {
       name: `${name}`
     })
   }
+  // 后端合并前端上传的N个切片 返回完整文件路径
   async mergefile() {
     const {
       ext,
@@ -99,6 +100,55 @@ class UtilController extends BaseController {
       url: `/public/${hash}.${ext}`,
     })
   }
+
+  // 检测上传文件是否已经存在
+  async checkfile() {
+    const {
+      ctx
+    } = this
+    const {
+      ext,
+      hash
+    } = ctx.request.body
+    // 根据前端传 文件名和hash 判断文件是否存在
+    const filePath = path.resolve(this.config.UPLOAD_DIR, `${hash}.${ext}`) //文件路径
+
+    let uploaded = false
+    let uploadedList = []
+    if (fse.existsSync(filePath)) {
+      // 文件存在
+      uploaded = true
+    } else {
+      // 若不存在判断切片是否存在
+      uploadedList = await this.getUploadedList(path.resolve(this.config.UPLOAD_DIR, hash))
+    }
+    // 切片也不存在则全量上传
+    this.success({
+      uploaded,
+      uploadedList
+    })
+  }
+  
+  // 隐藏文件格式 .DS_Strore 
+  async getUploadedList(dirPath) {
+    // fse.readdirSync(dirPath)读取文件夹返回数组
+    // 过滤掉隐藏文件
+    return fse.existsSync(dirPath) ? fse.readdirSync(dirPath).filter(name => name[0] !== '.') : []
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }
 
 module.exports = UtilController

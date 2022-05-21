@@ -86,7 +86,7 @@ import {
 } from '../utils'
 import sparkMD5 from 'spark-md5'
 // 文件切成单片的颗粒度
-const CHUNK_SIZE = 1 * 1024 * 1024   //1M/片
+const CHUNK_SIZE = 1 * 1024 * 1024 //1M/片
 // const CHUNK_SIZE = 0.1 * 1024 * 1024 //100K/片
 export default {
   mounted() {
@@ -187,6 +187,19 @@ export default {
       // console.log('hashIdle:', hashIdle)
       console.log('hashSample:', hashSample)
       this.hash = hashSample
+
+      // 问一下后端，文件是否上传过，如果没有，是否存在切片
+      const {
+        data: { uploaded, uploadedList },
+      } = await this.$http.post('/checkfile', {
+        hash: this.hash,
+        ext: this.file.name.split('.').pop(),
+      })
+      console.log(uploadedList, 'uploadedList')
+      if (uploaded) {
+        return this.$message.success('妙传成功')
+      }
+
       // 建议：抽样hash不算全量的缺点，可采用两个hash配合的方式
       // chunks数据重组
       this.chunks = chunks.map((chunk, index) => {
@@ -205,7 +218,7 @@ export default {
           form.append('hash', chunk.hash)
           form.append('index', chunk.index)
           form.append('chunk', chunk.chunk)
-          form.append('chunkIndex',chunk.index)
+          form.append('chunkIndex', chunk.index)
           return form
         })
         // 每个切片的进度条

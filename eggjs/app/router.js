@@ -19,6 +19,10 @@ module.exports = app => {
   router.post('/uploadfile', controller.util.uploadfile)
   // 合并切片文件
   router.post('/mergefile', controller.util.mergefile)
+  // 后端检测前端要上传的文件是否在后端存在
+  router.post('/checkfile', controller.util.checkfile)
+
+
   // prefix: '/user' 路由前缀
   router.group({
     name: 'user',
