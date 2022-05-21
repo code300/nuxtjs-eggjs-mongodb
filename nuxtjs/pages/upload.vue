@@ -40,6 +40,9 @@
         class="cube-container"
         :style="{width:cubeWidth+'px'}"
       >
+        <!-- <pre>
+        {{chunks}}
+      </pre> -->
         <div
           class="cube"
           v-for="chunk in chunks"
@@ -83,8 +86,8 @@ import {
 } from '../utils'
 import sparkMD5 from 'spark-md5'
 // 文件切成单片的颗粒度
-// const CHUNK_SIZE = 10 * 1024 * 1024   //10M/片
-const CHUNK_SIZE = 0.1 * 1024 * 1024 //0.1M/片
+const CHUNK_SIZE = 1 * 1024 * 1024   //1M/片
+// const CHUNK_SIZE = 0.1 * 1024 * 1024 //100K/片
 export default {
   mounted() {
     this.bindEvents()
@@ -95,6 +98,7 @@ export default {
       // uploadProgress: 0,
       hashProgress: 0,
       chunks: [],
+      hash: '',
     }
   },
   computed: {
@@ -182,14 +186,14 @@ export default {
       // console.log('hashWorker:', hashWorker)
       // console.log('hashIdle:', hashIdle)
       console.log('hashSample:', hashSample)
-      const hash = hashSample
+      this.hash = hashSample
       // 建议：抽样hash不算全量的缺点，可采用两个hash配合的方式
       // chunks数据重组
       this.chunks = chunks.map((chunk, index) => {
-        // 切片的 name = hash + index 命名
-        const name = hash + '-' + index
+        // 切片的 name = this.hash + index 命名
+        const name = this.hash + '-' + index
         // return还可以加文件type, 手动添加属性和默认值progress: 0
-        return { name, hash, index, chunk: chunk.file, progress: 0 }
+        return { name, hash: this.hash, index, chunk: chunk.file, progress: 0 }
       })
       // 发请求
       const requests = this.chunks
@@ -201,6 +205,7 @@ export default {
           form.append('hash', chunk.hash)
           form.append('index', chunk.index)
           form.append('chunk', chunk.chunk)
+          form.append('chunkIndex',chunk.index)
           return form
         })
         // 每个切片的进度条
@@ -218,6 +223,7 @@ export default {
         })
       // @todo 并发量控制
       await Promise.all(requests)
+      await this.mergeRequest()
     },
     // 文件上传方案1--正常整文件上传
     async uploadUnchunks() {
@@ -245,6 +251,13 @@ export default {
         .catch((err) => {
           this.$message.error(err ? err : '上传失败')
         })
+    },
+    async mergeRequest() {
+      await this.$http.post('/mergefile', {
+        ext: this.file.name.split('.').pop(),
+        size: CHUNK_SIZE,
+        hash: this.hash,
+      })
     },
   },
 }
