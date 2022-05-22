@@ -87,7 +87,7 @@ import {
 import sparkMD5 from 'spark-md5'
 // 文件切成单片的颗粒度
 // const CHUNK_SIZE = 0.1 * 1024 * 1024 //100KB/片
-const CHUNK_SIZE = 1 * 1024 * 1024 //1M/片
+const CHUNK_SIZE = 10 * 1024 * 1024 //1M/片
 export default {
   mounted() {
     this.bindEvents()
@@ -211,24 +211,27 @@ export default {
           form.append('chunk', chunk.chunk)
           return { form, index: chunk.index }
         })
-        // 每个切片的进度条
-        .map(({ form, index }) => {
-          this.$http.post('/uploadfile', form, {
-            onUploadProgress: (progress) => {
-              // 是每个切片的进度条，整体的进度条需要计算出来
-              // console.log(this.chunks)
-              // console.log(progress)
-              this.chunks[index].progress = Number(
-                ((progress.loaded / progress.total) * 100).toFixed(2)
-              )
-            },
-          })
-        })
+      // 每个切片的进度条
+      // .map(({ form, index }) => {
+      //   this.$http.post('/uploadfile', form, {
+      //     onUploadProgress: (progress) => {
+      //       // 是每个切片的进度条，整体的进度条需要计算出来
+      //       // console.log(this.chunks)
+      //       // console.log(progress)
+      //       this.chunks[index].progress = Number(
+      //         ((progress.loaded / progress.total) * 100).toFixed(2)
+      //       )
+      //     },
+      //   })
+      // })
       console.log(requests, 'requests')
-      // @todo 并发量控制
-      await Promise.all(requests)
+      // @todo Promise.all()发起全部请求，需要做并发量控制
+      // await Promise.all(requests)
+      // 做并发数控制处理
+      await this.sendRequest(requests)
       await this.mergeRequest()
     },
+    // 合并每个切片的uploadfile请求
     async mergeRequest() {
       await this.$http.post('/mergefile', {
         ext: this.file.name.split('.').pop(),
@@ -236,6 +239,45 @@ export default {
         hash: this.hash,
       })
     },
+    async sendRequest(chunks, limit = 3) {
+      // limit限制并发数
+      // 虽然浏览器有请求限制，但是并发量还是会一次发起全部pending
+      return new Promise((resolve, reject) => {
+        const len = chunks.length
+        let counter = 0
+
+        const start = async () => {
+          const task = chunks.shift()
+          if (task) {
+            const { form, index } = task
+            await this.$http.post('/uploadfile', form, {
+              onUploadProgress: (progress) => {
+                // 是每个切片的进度条，整体的进度条需要计算出来
+                this.chunks[index].progress = Number(
+                  ((progress.loaded / progress.total) * 100).toFixed(2)
+                )
+              },
+            })
+            if (counter == len - 1) {
+              // 最后一个任务
+              resolve()
+            } else {
+              counter++
+              start() // 启动下个任务
+            }
+          }
+        }
+
+        while (limit > 0) {
+          // 启动limit个任务
+          setTimeout(() => {
+            start()
+          }, Math.random() * 2000)
+          limit -= 1
+        }
+      })
+    },
+
     // 监听文件上传  点击文件上传功能实现
     handleFileChange(e) {
       const [file] = e.target.files
