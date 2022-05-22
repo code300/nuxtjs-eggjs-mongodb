@@ -87,7 +87,10 @@ import {
 import sparkMD5 from 'spark-md5'
 // 文件切成单片的颗粒度
 // const CHUNK_SIZE = 0.1 * 1024 * 1024 //100KB/片
-const CHUNK_SIZE = 10 * 1024 * 1024 //1M/片
+const CHUNK_SIZE = 10 * 1024 * 1024 //10M/片
+// 此处切片区块写死,可以实现响应式设置，使网速利用率最大化(待优化功能)
+// 实现原理：TCP慢启动，先上传一个初始区块，比如10KB根据上传成功时间，决定下一个区块20KB/50KB...
+// 再下一个一样的逻辑，可能变成100KB/200KB 使区块大小和网速达到更高的匹配度
 export default {
   mounted() {
     this.bindEvents()
@@ -209,7 +212,7 @@ export default {
           form.append('hash', chunk.hash)
           // form.append('index', chunk.index)
           form.append('chunk', chunk.chunk)
-          return { form, index: chunk.index }
+          return { form, index: chunk.index, error: 0 }
         })
       // 每个切片的进度条
       // .map(({ form, index }) => {
@@ -239,31 +242,54 @@ export default {
         hash: this.hash,
       })
     },
-    async sendRequest(chunks, limit = 3) {
-      // limit限制并发数
+
+    // 并发控制和上传报错重试功能实现
+    async sendRequest(chunks, limit = 4) {
+      // 并发控制逻辑处理
+      // limit限制并发数为4
       // 虽然浏览器有请求限制，但是并发量还是会一次发起全部pending
+
+      // 上传可能报错,报错之后,进度条变红则开始重试
+      // 一个请求重试失败三次，整体全部终止
       return new Promise((resolve, reject) => {
         const len = chunks.length
         let counter = 0
+        let isStop = false
 
         const start = async () => {
+          if (isStop) {
+            return
+          }
           const task = chunks.shift()
           if (task) {
-            const { form, index } = task
-            await this.$http.post('/uploadfile', form, {
-              onUploadProgress: (progress) => {
-                // 是每个切片的进度条，整体的进度条需要计算出来
-                this.chunks[index].progress = Number(
-                  ((progress.loaded / progress.total) * 100).toFixed(2)
-                )
-              },
-            })
-            if (counter == len - 1) {
-              // 最后一个任务
-              resolve()
-            } else {
-              counter++
-              start() // 启动下个任务
+            const { form, index, error } = task
+
+            try {
+              await this.$http.post('/uploadfile', form, {
+                onUploadProgress: (progress) => {
+                  // 是每个切片的进度条，整体的进度条需要计算出来
+                  this.chunks[index].progress = Number(
+                    ((progress.loaded / progress.total) * 100).toFixed(2)
+                  )
+                },
+              })
+              if (counter == len - 1) {
+                // 最后一个任务
+                resolve()
+              } else {
+                counter++
+                start() // 启动下个任务
+              }
+            } catch (err) {
+              this.chunks[index].progress = -1
+              if (task.error < 3) {
+                task.error++
+                chunks.unshift(task)
+                start()
+              } else {
+                isStop = true
+                reject()
+              }
             }
           }
         }

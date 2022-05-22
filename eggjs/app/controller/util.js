@@ -61,6 +61,10 @@ class UtilController extends BaseController {
   // }
   // 文件上传--切片文件
   async uploadfile() {
+    // 模拟报错概率
+    if(Math.random()>0.3){
+      return this.ctx.status = 500
+    }
     const {
       ctx
     } = this
