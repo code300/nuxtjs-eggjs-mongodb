@@ -66,8 +66,8 @@ class UtilController extends BaseController {
     } = this
 
     const file = ctx.request.files[0]
-    // console.log(999);
-    // console.log(ctx.request.files);
+    console.log(99);
+    console.log(ctx.request.files);
     const {
       name,
       hash
@@ -75,17 +75,17 @@ class UtilController extends BaseController {
 
     const chunkPath = path.resolve(this.config.UPLOAD_DIR, hash)
     // const filePath = path.resolve()  //切片合并之后，最终存储的位置
-
     if (!fse.existsSync(chunkPath)) {
       await fse.mkdir(chunkPath)
     }
-
-    // console.log(name,file);
+    console.log(999);
+    console.log(name,file);
     await fse.move(file.filepath, `${chunkPath}/${name}`)
-    this.success({
-      url: `${chunkPath}/${name}`,
-      name: `${name}`
-    })
+    this.message('上传切片成功')
+    // this.success({
+    //   url: `${chunkPath}/${name}`,
+    //   name: `${name}`
+    // })
   }
   // 后端合并前端上传的N个切片 返回完整文件路径
   async mergefile() {
@@ -95,7 +95,7 @@ class UtilController extends BaseController {
       hash
     } = this.ctx.request.body
     const filePath = path.resolve(this.config.UPLOAD_DIR, `${hash}.${ext}`)
-    await this.ctx.service.tools.mergeFile(filePath, hash, size)
+    await this.ctx.service.tools.mergeFiled(filePath, hash, size)
     this.success({
       url: `/public/${hash}.${ext}`,
     })

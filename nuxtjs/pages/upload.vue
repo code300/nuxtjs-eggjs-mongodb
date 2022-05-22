@@ -86,8 +86,8 @@ import {
 } from '../utils'
 import sparkMD5 from 'spark-md5'
 // 文件切成单片的颗粒度
+// const CHUNK_SIZE = 0.1 * 1024 * 1024 //100KB/片
 const CHUNK_SIZE = 1 * 1024 * 1024 //1M/片
-// const CHUNK_SIZE = 0.1 * 1024 * 1024 //100K/片
 export default {
   mounted() {
     this.bindEvents()
@@ -125,14 +125,116 @@ export default {
     },
     // 提交请求 发送文件到后端
     async uploadFile() {
+      console.log(this.file, 'file')
+      if (!this.file) {
+        return
+      }
       // const isImage = await this.isImage(this.file)
       // if (!isImage) {
       //   console.log('格式错误')
       // } else {
       //   console.log('格式正确')
       // }
+
+      // 上传同一个文件 web-worker/时间切片/抽样等方式计算的md5的hash值一样 证明计算方式没问题
+      // 准备工作：文件切片 可以控制文件片段的颗粒度大小CHUNK_SIZE
+      const chunks = await createFileChunk(this.file, CHUNK_SIZE)
+      // 计算切片hash值方案1：web-worker创建一个浏览器新进程计算md5的hash值
+      // const hashWorker = await calculateHashWorker(
+      //   chunks,
+      //   this.hashProgress
+      // )
+      // 计算切片hash值方案2：利用浏览器空闲时间计算md5的hash值
+      // const hashIdle = await calculateHashIdle(
+      //   sparkMD5,
+      //   chunks,
+      //   this.hashProgress
+      // )
+      // 计算切片hash值方案3：抽样方式计算md5的hash值
+      // 特点：抽样hash不算全量，损失一小部分的精度，换取效率（布隆过滤器）
+      const hashSample = await calculateHashSample(
+        sparkMD5,
+        this.file,
+        this.hashProgress
+      )
+      // console.log(chunks, 'chunks')
+      // console.log('hashWorker:', hashWorker)
+      // console.log('hashIdle:', hashIdle)
+      // console.log(hashSample, 'hashSample:')
+      this.hash = hashSample
+
+      // 问一下后端，文件是否上传过，如果没有，是否存在切片
+      const {
+        data: { uploaded, uploadedList },
+      } = await this.$http.post('/checkfile', {
+        hash: this.hash,
+        ext: this.file.name.split('.').pop(),
+      })
+      // 秒传
+      if (uploaded) {
+        return this.$message.success('妙传成功')
+      }
+
+      // 建议：抽样hash不算全量的缺点，可采用两个hash配合的方式
+      // chunks数据重组
+      this.chunks = chunks.map((chunk, index) => {
+        // 切片的 name = this.hash + index 命名
+        const name = this.hash + '-' + index
+        // return还可以加文件type, 手动添加属性和默认值progress: 0
+        return {
+          name,
+          hash: this.hash,
+          index,
+          chunk: chunk.file,
+          progress: uploadedList.indexOf(name) > -1 ? 100 : 0,
+        }
+      })
+
       // await this.uploadUnchunks()
-      await this.uploadChunks()
+      await this.uploadChunks(uploadedList)
+    },
+
+    // 文件上传方案2--切片方式
+    async uploadChunks(uploadedList = []) {
+      console.log(this.chunks, 'chunks')
+      console.log(uploadedList, 'uploadedList')
+      // 发请求
+      const requests = this.chunks
+        .filter((chunk) => uploadedList.indexOf(chunk.name) == -1)
+        // 获取formData数据
+        .map((chunk, index) => {
+          // 转成promise
+          const form = new FormData()
+          form.append('name', chunk.name)
+          form.append('hash', chunk.hash)
+          // form.append('index', chunk.index)
+          form.append('chunk', chunk.chunk)
+          return { form, index: chunk.index }
+        })
+        // 每个切片的进度条
+        .map(({ form, index }) => {
+          this.$http.post('/uploadfile', form, {
+            onUploadProgress: (progress) => {
+              // 是每个切片的进度条，整体的进度条需要计算出来
+              // console.log(this.chunks)
+              // console.log(progress)
+              this.chunks[index].progress = Number(
+                ((progress.loaded / progress.total) * 100).toFixed(2)
+              )
+            },
+          })
+        })
+      console.log(requests, 'requests')
+      // @todo 并发量控制
+      await Promise.all(requests)
+      await this.mergeRequest()
+    },
+    async mergeRequest() {
+      await this.$http.post('/mergefile', {
+        ext: this.file.name.split('.').pop(),
+        size: CHUNK_SIZE,
+        hash: this.hash,
+      })
     },
     // 监听文件上传  点击文件上传功能实现
     handleFileChange(e) {
@@ -158,120 +260,33 @@ export default {
         e.preventDefault()
       })
     },
-    // 文件上传方案2--切片方式
-    async uploadChunks() {
-      // 上传同一个文件 web-worker/时间切片/抽样等方式计算的md5的hash值一样 证明计算方式没问题
-
-      // 准备工作：文件切片 可以控制文件片段的颗粒度大小CHUNK_SIZE
-      const chunks = createFileChunk(this.file, CHUNK_SIZE)
-      // 计算切片hash值方案1：web-worker创建一个浏览器新进程计算md5的hash值
-      // const hashWorker = await calculateHashWorker(
-      //   chunks,
-      //   this.hashProgress
-      // )
-      // 计算切片hash值方案2：利用浏览器空闲时间计算md5的hash值
-      // const hashIdle = await calculateHashIdle(
-      //   sparkMD5,
-      //   chunks,
-      //   this.hashProgress
-      // )
-      // 计算切片hash值方案3：抽样方式计算md5的hash值
-      // 特点：抽样hash不算全量，损失一小部分的精度，换取效率（布隆过滤器）
-      const hashSample = await calculateHashSample(
-        sparkMD5,
-        this.file,
-        this.hashProgress
-      )
-      console.log('chunks', chunks)
-      // console.log('hashWorker:', hashWorker)
-      // console.log('hashIdle:', hashIdle)
-      console.log('hashSample:', hashSample)
-      this.hash = hashSample
-
-      // 问一下后端，文件是否上传过，如果没有，是否存在切片
-      const {
-        data: { uploaded, uploadedList },
-      } = await this.$http.post('/checkfile', {
-        hash: this.hash,
-        ext: this.file.name.split('.').pop(),
-      })
-      console.log(uploadedList, 'uploadedList')
-      if (uploaded) {
-        return this.$message.success('妙传成功')
-      }
-
-      // 建议：抽样hash不算全量的缺点，可采用两个hash配合的方式
-      // chunks数据重组
-      this.chunks = chunks.map((chunk, index) => {
-        // 切片的 name = this.hash + index 命名
-        const name = this.hash + '-' + index
-        // return还可以加文件type, 手动添加属性和默认值progress: 0
-        return { name, hash: this.hash, index, chunk: chunk.file, progress: 0 }
-      })
-      // 发请求
-      const requests = this.chunks
-        // 获取formData数据
-        .map((chunk, index) => {
-          // 转成promise
-          const form = new FormData()
-          form.append('name', chunk.name)
-          form.append('hash', chunk.hash)
-          form.append('index', chunk.index)
-          form.append('chunk', chunk.chunk)
-          form.append('chunkIndex', chunk.index)
-          return form
-        })
-        // 每个切片的进度条
-        .map((form, index) => {
-          this.$http.post('/uploadfile', form, {
-            onUploadProgress: (progress) => {
-              // 是每个切片的进度条，整体的进度条需要计算出来
-              // console.log(this.chunks)
-              // console.log(progress)
-              this.chunks[index].progress = Number(
-                ((progress.loaded / progress.total) * 100).toFixed(2)
-              )
-            },
-          })
-        })
-      // @todo 并发量控制
-      await Promise.all(requests)
-      await this.mergeRequest()
-    },
     // 文件上传方案1--正常整文件上传
-    async uploadUnchunks() {
-      const form = new FormData()
-      form.append('name', 'file')
-      form.append('file', this.file)
-      await this.$http
-        .post('/uploadfile', form, {
-          onUploadProgress: (progress) => {
-            this.uploadProgress = Number(
-              ((progress.loaded / progress.total) * 100).toFixed(2)
-            )
-          },
-        })
-        .then((res) => {
-          // this.uploadProgress = 0
-          this.file = null
-          this.$refs.uploadInput.value = ''
-          //上传成功回调-清理工作
-          this.$message({
-            message: res.data.message ? res.data.message : '上传成功',
-            type: 'success',
-          })
-        })
-        .catch((err) => {
-          this.$message.error(err ? err : '上传失败')
-        })
-    },
-    async mergeRequest() {
-      await this.$http.post('/mergefile', {
-        ext: this.file.name.split('.').pop(),
-        size: CHUNK_SIZE,
-        hash: this.hash,
-      })
-    },
+    // async uploadUnchunks() {
+    //   const form = new FormData()
+    //   form.append('name', 'file')
+    //   form.append('file', this.file)
+    //   await this.$http
+    //     .post('/uploadfile', form, {
+    //       onUploadProgress: (progress) => {
+    //         this.uploadProgress = Number(
+    //           ((progress.loaded / progress.total) * 100).toFixed(2)
+    //         )
+    //       },
+    //     })
+    //     .then((res) => {
+    //       // this.uploadProgress = 0
+    //       this.file = null
+    //       this.$refs.uploadInput.value = ''
+    //       //上传成功回调-清理工作
+    //       this.$message({
+    //         message: res.data.message ? res.data.message : '上传成功',
+    //         type: 'success',
+    //       })
+    //     })
+    //     .catch((err) => {
+    //       this.$message.error(err ? err : '上传失败')
+    //     })
+    // },
   },
 }
 </script>

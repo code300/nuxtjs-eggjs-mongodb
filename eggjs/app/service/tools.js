@@ -39,12 +39,18 @@ class ToolService extends Service {
     }
   }
   // 合并切片文件
-  async mergeFile(filepPath, filehash, size) {
+  async mergeFiled(filepPath, filehash, size) {
     // console.log(filepPath, filehash, size);
     // filepPath 即所有切片合并后的整图路径 /app/public/hash.png
     // size 切片chunk单片的尺寸
     // chunkdDir 以hash命名 存放切片chunk的文件夹 
     const chunkdDir = path.resolve(this.config.UPLOAD_DIR, filehash)
+    if (!fse.existsSync(chunkdDir)) {
+      await fse.mkdir(chunkdDir)
+    }
+    // console.log(999);
+    // console.log(name,file);
+    // await fse.move(file.filepath, `${chunkPath}/${name}`)
     // chunks是存放了N个切片的数组
     let chunks = await fse.readdir(chunkdDir)
     chunks.sort((a, b) => a.split('-')[1] - b.split('-')[1])
@@ -57,7 +63,7 @@ class ToolService extends Service {
       const readStream = fse.createReadStream(filePath)
       readStream.on('end', () => {
         // 删除所有切片文件
-        fse.unlinkSync(filePath)
+        // fse.unlinkSync(filePath)
         resolve()
       })
       readStream.pipe(writeStream)
