@@ -108,7 +108,7 @@ $ npm stop
 $ mongod —dbpath=/usr/local/mongodb/data
 
 # 重开一个cmd
-$ mongodb
+$ mongo
 
 http://127.0.0.1:27017/
 ```

@@ -23,9 +23,7 @@ class UtilController extends BaseController {
 
   // 需求分析：发送邮件是通用功能  发送验证码是业务功能
   async sendcode() {
-    const {
-      ctx,
-    } = this
+    const { ctx } = this
     const email = ctx.query.email
     const code = Math.random().toString().slice(2, 6)
     console.log('邮箱：' + email + '验证码：' + code)
@@ -33,7 +31,12 @@ class UtilController extends BaseController {
     const subject = '邮箱验证码'
     const text = ''
     const html = `<h2><a href="www.baidu.com"><space>${code}</space></a></h2>`
-    const hasSend = await this.service.tools.sendMail(email, subject, text, html)
+    const hasSend = await this.service.tools.sendMail(
+      email,
+      subject,
+      text,
+      html
+    )
     if (hasSend) {
       this.message('发送成功')
     } else {
@@ -62,28 +65,23 @@ class UtilController extends BaseController {
   // 文件上传--切片文件
   async uploadfile() {
     // 模拟报错概率
-    if(Math.random()>0.3){
-      return this.ctx.status = 500
+    if (Math.random() > 0.3) {
+      return (this.ctx.status = 500)
     }
-    const {
-      ctx
-    } = this
+    const { ctx } = this
 
     const file = ctx.request.files[0]
-    console.log(99);
-    console.log(ctx.request.files);
-    const {
-      name,
-      hash
-    } = ctx.request.body
+    console.log(99)
+    console.log(ctx.request.files)
+    const { name, hash } = ctx.request.body
 
     const chunkPath = path.resolve(this.config.UPLOAD_DIR, hash)
     // const filePath = path.resolve()  //切片合并之后，最终存储的位置
     if (!fse.existsSync(chunkPath)) {
       await fse.mkdir(chunkPath)
     }
-    console.log(999);
-    console.log(name,file);
+    console.log(999)
+    console.log(name, file)
     await fse.move(file.filepath, `${chunkPath}/${name}`)
     this.message('上传切片成功')
     // this.success({
@@ -93,11 +91,7 @@ class UtilController extends BaseController {
   }
   // 后端合并前端上传的N个切片 返回完整文件路径
   async mergefile() {
-    const {
-      ext,
-      size,
-      hash
-    } = this.ctx.request.body
+    const { ext, size, hash } = this.ctx.request.body
     const filePath = path.resolve(this.config.UPLOAD_DIR, `${hash}.${ext}`)
     await this.ctx.service.tools.mergeFiled(filePath, hash, size)
     this.success({
@@ -107,15 +101,10 @@ class UtilController extends BaseController {
 
   // 检测上传文件是否已经存在
   async checkfile() {
-    const {
-      ctx
-    } = this
-    const {
-      ext,
-      hash
-    } = ctx.request.body
+    const { ctx } = this
+    const { ext, hash } = ctx.request.body
     // 根据前端传 文件名和hash 判断文件是否存在
-    const filePath = path.resolve(this.config.UPLOAD_DIR, `${hash}.${ext}`) //文件路径
+    const filePath = path.resolve(this.config.UPLOAD_DIR, `${hash}.${ext}`) // 文件路径
 
     let uploaded = false
     let uploadedList = []
@@ -124,35 +113,25 @@ class UtilController extends BaseController {
       uploaded = true
     } else {
       // 若不存在判断切片是否存在
-      uploadedList = await this.getUploadedList(path.resolve(this.config.UPLOAD_DIR, hash))
+      uploadedList = await this.getUploadedList(
+        path.resolve(this.config.UPLOAD_DIR, hash)
+      )
     }
     // 切片也不存在则全量上传
     this.success({
       uploaded,
-      uploadedList
+      uploadedList,
     })
   }
-  
-  // 隐藏文件格式 .DS_Strore 
+
+  // 隐藏文件格式 .DS_Strore
   async getUploadedList(dirPath) {
     // fse.readdirSync(dirPath)读取文件夹返回数组
     // 过滤掉隐藏文件
-    return fse.existsSync(dirPath) ? fse.readdirSync(dirPath).filter(name => name[0] !== '.') : []
+    return fse.existsSync(dirPath)
+      ? fse.readdirSync(dirPath).filter(name => name[0] !== '.')
+      : []
   }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 }
 
 module.exports = UtilController
