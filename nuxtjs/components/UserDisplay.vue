@@ -1,16 +1,15 @@
 <template>
 	<div class="user">
 		<nuxt-link :to="url">
-			<img class="user-avatar" :src="user.avatar" alt="" />
+			<img :src="user.avatar" class="user-avatar" alt="" />
 			{{ user.nickname }}
 		</nuxt-link>
-		<slot></slot>
+		<slot> </slot>
 	</div>
 </template>
 
 <script>
 export default {
-	name: 'UserDisplay',
 	props: ['user'],
 	computed: {
 		url() {
@@ -20,7 +19,7 @@ export default {
 }
 </script>
 
-<style lang="scss" scoped>
+<style lang="scss">
 .user {
 	display: inline-block;
 	padding: 5px;
@@ -31,6 +30,7 @@ export default {
 		width: 30px;
 		height: 30px;
 		border-radius: 50%;
+		vertical-align: middle;
 	}
 }
 </style>
