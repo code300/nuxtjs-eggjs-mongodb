@@ -104,8 +104,11 @@ $ npm stop
 
 # mongoDB
 ```bash
+# mongodb/bin
+$ cd /usr/local/mongodb/bin
+
 # 第一个cmd
-$ mongod —dbpath=/usr/local/mongodb/data
+$ mongod -dbpath=/usr/local/mongodb/data
 
 # 重开一个cmd
 $ mongo

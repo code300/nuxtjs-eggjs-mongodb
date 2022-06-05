@@ -1,44 +1,42 @@
 <template>
 	<div class="login bg-image">
-		<div class="mask"></div>
+		<div class="mask" />
 		<div class="form-box">
 			<el-form
+				ref="loginForm"
 				class="login-form"
 				label-width="80px"
 				:model="form"
 				:rules="rules"
-				ref="loginForm"
 			>
 				<el-form-item label="邮箱" prop="email">
-					<el-input v-model="form.email" placeholder="请输入邮箱"></el-input>
+					<el-input v-model="form.email" placeholder="请输入邮箱" />
 				</el-form-item>
 				<el-form-item label="密码:" prop="password">
 					<el-input
 						v-model="form.password"
 						placeholder="请输入密码"
 						show-password
-					></el-input>
+					/>
 				</el-form-item>
 				<el-form-item label="验证码:" prop="captcha">
-					<el-input
-						v-model="form.captcha"
-						placeholder="请输入验证码"
-					></el-input>
+					<el-input v-model="form.captcha" placeholder="请输入验证码" />
 				</el-form-item>
 				<div class="captcha">
 					<img
-						@click="updateCaptcha"
 						:src="captchaUrl ? captchaUrl : ''"
 						alt=""
+						@click="updateCaptcha"
 					/>
 				</div>
 
-				<div class="submit-item">
-					<!-- <button @click.prevent="handleRegister">注册</button> -->
-					<el-button type="primary" @click.native.prevent="handleLogin"
-						>登录</el-button
-					>
-				</div>
+				<el-form-item>
+					<el-button type="primary" @click.native.prevent="handleLogin">
+						登录
+					</el-button>
+					<el-button @click.native.prevent="handleRegister"> 注册 </el-button>
+				</el-form-item>
+				<!-- <div class="submit-item"></div> -->
 			</el-form>
 		</div>
 	</div>
@@ -76,7 +74,7 @@ export default {
 		handleLogin() {
 			this.$refs.loginForm.validate(async valid => {
 				if (valid) {
-					let formParams = {
+					const formParams = {
 						email: this.form.email,
 						password: md5(this.form.password),
 						captcha: this.form.captcha
@@ -90,7 +88,7 @@ export default {
 						if (res.code == 0) {
 							// 登录成功返回token
 							this.$message.success('登录成功')
-							localStorage.setItem('token', res.data.token)
+							localStorage.setItem('KKB_USER_TOKEN', res.data.token)
 							setTimeout(() => {
 								this.$router.push('/')
 							}, 500)
@@ -105,6 +103,9 @@ export default {
 					console.log('校验失败')
 				}
 			})
+		},
+		handleRegister() {
+			this.$router.push('/register')
 		}
 	}
 }

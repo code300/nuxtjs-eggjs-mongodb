@@ -4,7 +4,7 @@
 			<img :src="user.avatar" class="user-avatar" alt="" />
 			{{ user.nickname }}
 		</nuxt-link>
-		<slot> </slot>
+		<slot />
 	</div>
 </template>
 
@@ -21,10 +21,11 @@ export default {
 
 <style lang="scss">
 .user {
-	display: inline-block;
-	padding: 5px;
+	// display: inline-block;
+	// padding: 5px;
 	a {
 		color: #67c23a;
+		text-decoration: none;
 	}
 	.user-avatar {
 		width: 30px;

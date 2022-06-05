@@ -2,7 +2,7 @@
 	<!-- <Tutorial/> -->
 	<div class="home">
 		<div class="container">
-			<VirtualList :listData="articles"></VirtualList>
+			<VirtualList :list-data="articles" />
 			<div v-for="(item, index) in articles" :key="index">
 				{{ item.title }}
 			</div>
@@ -15,9 +15,6 @@ import VirtualList from '~/components/VirtualList'
 
 export default {
 	name: 'IndexPage',
-	mounted() {
-		this.getArticles()
-	},
 	components: {
 		VirtualList
 	},
@@ -26,9 +23,12 @@ export default {
 			articles: []
 		}
 	},
+	mounted() {
+		this.getArticles()
+	},
 	methods: {
 		async getArticles() {
-			let res = await this.$http.get('/article')
+			const res = await this.$http.get('/article')
 			if (res.code == 0) {
 				this.articles = res.data
 			}

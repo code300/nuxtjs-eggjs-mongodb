@@ -10,32 +10,37 @@
 				:default-active="'1'"
 			>
 				<el-menu-item index="0">
-					<img class="logo" src="../static/icon-logo.png" alt="" />
+					<div class="logo">
+						<img class="logo" src="../static/icon-logo.png" alt="" />
+					</div>
 				</el-menu-item>
 
 				<el-menu-item index="1">
-					<nuxt-link to="/">首页</nuxt-link>
+					<nuxt-link to="/"> 首页 </nuxt-link>
 				</el-menu-item>
 
-				<el-menu-item v-if="userinfo.id" index="3" class="pull-right">
+				<el-menu-item v-if="userinfo.id" index="2">
+					<nuxt-link to="/editor/new"> 写文章 </nuxt-link>
+				</el-menu-item>
+
+				<el-menu-item v-if="userinfo.id" index="3">
+					<nuxt-link to="/upload"> 上传 </nuxt-link>
+				</el-menu-item>
+
+				<el-menu-item v-if="userinfo.id" index="4" class="pull-right">
 					<a @click="logout">退出</a>
 				</el-menu-item>
-				<el-menu-item v-if="userinfo.id" index="4" class="pull-right">
-					<UserDisplay :user="userinfo"> </UserDisplay>
-				</el-menu-item>
 
-				<el-menu-item v-if="userinfo.id" index="3" class="pull-right">
-					<nuxt-link to="/editor/new">
-						<el-button type="primary">写文章</el-button>
-					</nuxt-link>
+				<el-menu-item v-if="userinfo.id" index="5" class="pull-right">
+					<UserDisplay :user="userinfo" />
 				</el-menu-item>
 
 				<el-menu-item v-if="!userinfo.id" index="2" class="pull-right">
-					<nuxt-link to="/register">注册</nuxt-link>
+					<nuxt-link to="/register"> 注册 </nuxt-link>
 				</el-menu-item>
 
 				<el-menu-item v-if="!userinfo.id" index="3" class="pull-right">
-					<nuxt-link to="/login">登录</nuxt-link>
+					<nuxt-link to="/login"> 登录 </nuxt-link>
 				</el-menu-item>
 			</el-menu>
 		</el-header>
@@ -51,22 +56,22 @@
 import UserDisplay from '~/components/UserDisplay.vue'
 export default {
 	components: { UserDisplay },
-	mounted() {
-		this.getUserInfo()
-	},
 	computed: {
 		userinfo() {
 			return this.$store.state.user
 		}
+	},
+	mounted() {
+		this.getUserInfo()
 	},
 	methods: {
 		logout() {
 			localStorage.removeItem('KKB_USER_TOKEN')
 			this.$store.commit('user/LOGOUT')
 		},
-		async getUserInfo() {
+		getUserInfo() {
 			// 获取用户个人信息，如果有登录状态
-			let token = localStorage.getItem('KKB_USER_TOKEN')
+			const token = localStorage.getItem('KKB_USER_TOKEN')
 			if (token) {
 				console.log(token, 'token')
 				this.$store.dispatch('user/detail')
@@ -93,7 +98,11 @@ html {
 		background-color: #ff7d24;
 		.el-menu-item {
 			.logo {
-				height: 40px;
+				line-height: 60px;
+				height: 60px;
+				img {
+					height: 40px;
+				}
 			}
 		}
 	}
@@ -116,14 +125,6 @@ html {
 
 a {
 	text-decoration: none;
-}
-.el-menu {
-	// width: 100%;
-	// height: 66px;
-	// line-height: 66px;
-	// margin: 0 auto;
-	// color: #fff;
-	// background-color: #ff8712;
 }
 .el-menu--horizontal > .el-menu-item.is-active {
 	border: none;

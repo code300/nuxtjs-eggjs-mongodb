@@ -24,15 +24,8 @@ class UserController extends BaseController {
     // this.message('token')
     // this.success({name:'kkb'})
     // this.error('参数校验失败', -1, e.errors)
-    const {
-      ctx,
-      app,
-    } = this
-    const {
-      email,
-      password,
-      captcha,
-    } = ctx.request.body
+    const { ctx, app } = this
+    const { email, password, captcha } = ctx.request.body
     // 验证码是否是后端随机生成的
     if (captcha.toUpperCase() !== ctx.session.captcha.toUpperCase()) {
       return this.error('验证码错误')
@@ -46,12 +39,16 @@ class UserController extends BaseController {
       return this.error('邮箱或密码错误')
     }
     // 将用户信息加密成token返回
-    const token = jwt.sign({
-      _id: user._id,
-      email,
-    }, app.config.jwt.secret, {
-      expiresIn: '5000000m',
-    })
+    const token = jwt.sign(
+      {
+        _id: user._id,
+        email,
+      },
+      app.config.jwt.secret,
+      {
+        expiresIn: '5m',
+      }
+    )
     this.success({
       token,
       email,
@@ -61,22 +58,14 @@ class UserController extends BaseController {
 
   // 注册校验
   async register() {
-    const {
-      ctx,
-    } = this
+    const { ctx } = this
     try {
       // 校验传递的参数
       ctx.validate(createRule)
     } catch (e) {
       return this.error('参数校验失败', -1, e.errors)
     }
-    const {
-      email,
-      password,
-      captcha,
-      nickname,
-      emailcode,
-    } = ctx.request.body
+    const { email, password, captcha, nickname, emailcode } = ctx.request.body
 
     if (captcha.toUpperCase() !== ctx.session.captcha.toUpperCase()) {
       return this.error('验证码错误')
@@ -115,13 +104,9 @@ class UserController extends BaseController {
   }
 
   async info() {
-    const {
-      ctx,
-    } = this
+    const { ctx } = this
 
-    const {
-      email,
-    } = ctx.state
+    const { email } = ctx.state
 
     const user = await this.checkEmail(email)
     this.success(user)
@@ -130,10 +115,7 @@ class UserController extends BaseController {
     const { ctx } = this
     const url = ctx.request.body.url
 
-    await ctx.model.User.updateOne(
-      { _id: ctx.state.userid },
-      { avatar: url }
-    )
+    await ctx.model.User.updateOne({ _id: ctx.state.userid }, { avatar: url })
     this.success()
   }
   async isfollow() {
@@ -173,7 +155,9 @@ class UserController extends BaseController {
   }
   async following() {
     const { ctx } = this
-    const users = await ctx.model.User.findById(ctx.params.id).populate('following')
+    const users = await ctx.model.User.findById(ctx.params.id).populate(
+      'following'
+    )
     this.success(users.following)
   }
   async followers() {
@@ -187,7 +171,9 @@ class UserController extends BaseController {
     if (!me.likeArticle.find(id => id.toString() === ctx.params.id)) {
       me.likeArticle.push(ctx.params.id)
       me.save()
-      await ctx.model.Article.findByIdAndUpdate(ctx.params.id, { $inc: { like: 1 } })
+      await ctx.model.Article.findByIdAndUpdate(ctx.params.id, {
+        $inc: { like: 1 },
+      })
       return this.message('点赞成功')
     }
   }
@@ -198,7 +184,9 @@ class UserController extends BaseController {
     if (index > -1) {
       me.likeArticle.splice(index, 1)
       me.save()
-      await ctx.model.Article.findByIdAndUpdate(ctx.params.id, { $inc: { like: -1 } })
+      await ctx.model.Article.findByIdAndUpdate(ctx.params.id, {
+        $inc: { like: -1 },
+      })
       return this.message('取消点赞成功')
     }
   }
@@ -207,9 +195,12 @@ class UserController extends BaseController {
     const me = await ctx.model.User.findById(ctx.state.userid)
     console.log(me)
     const like = !!me.likeArticle.find(id => id.toString() === ctx.params.id)
-    const dislike = !!me.disLikeArticle.find(id => id.toString() === ctx.params.id)
+    const dislike = !!me.disLikeArticle.find(
+      id => id.toString() === ctx.params.id
+    )
     this.success({
-      like, dislike,
+      like,
+      dislike,
     })
   }
 }

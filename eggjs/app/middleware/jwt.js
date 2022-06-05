@@ -12,8 +12,10 @@ module.exports = app => {
       return
     }
     const token = ctx.request.header.authorization.replace('Bearer ', '')
+    console.log(token)
     console.log(999)
     console.log(app)
+    console.log(app.config)
     try {
       const ret = await jwt.verify(token, app.config.jwt.secret)
       console.log(ret)

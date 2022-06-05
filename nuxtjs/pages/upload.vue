@@ -1,14 +1,7 @@
 <template>
   <div class="upload">
-    <div
-      class="drag"
-      ref="drag"
-    >
-      <input
-        type="file"
-        ref="uploadInput"
-        @change="handleFileChange"
-      >
+    <div ref="drag" class="drag">
+      <input ref="uploadInput" type="file" @change="handleFileChange">
     </div>
     <div class="progress-box">
       <p>整个文件一次上传</p>
@@ -16,7 +9,7 @@
         :text-inside="true"
         :percentage="uploadProgress"
         :stroke-width="26"
-      ></el-progress>
+      />
     </div>
     <div class="progress-hash">
       <p>计算hashProgress</p>
@@ -24,10 +17,10 @@
         :text-inside="true"
         :percentage="hashProgress"
         :stroke-width="26"
-      ></el-progress>
+      />
     </div>
     <div>
-      <!-- 
+      <!--
       chunk.progress<0 报错 显示红色
       chunk.progress==100 成功
       别的数字 方块高度显示
@@ -36,45 +29,38 @@
       <!-- <pre>
         {{chunks | json}}
       </pre> -->
-      <div
-        class="cube-container"
-        :style="{width:cubeWidth+'px'}"
-      >
+      <div class="cube-container" :style="{ width: cubeWidth + 'px' }">
         <!-- <pre>
         {{chunks}}
       </pre> -->
-        <div
-          class="cube"
-          v-for="chunk in chunks"
-          :key="chunk.name"
-        >
+        <div v-for="chunk in chunks" :key="chunk.name" class="cube">
           <div
             :class="{
-            'uploading':chunk.progress>0 && chunk.progress<100,
-            'success':chunk.progress==100,
-            'error':chunk.progress<0
-          }"
-            :style="{height:chunk.progress+'%'}"
+              uploading: chunk.progress > 0 && chunk.progress < 100,
+              success: chunk.progress === 100,
+              error: chunk.progress < 0
+            }"
+            :style="{ height: chunk.progress + '%' }"
           >
             <i
+              v-if="chunk.progress > 0 && chunk.progress < 100"
               class="el-icon-loading"
-              style="color:#f56c6c"
-              v-if="chunk.progress>0 && chunk.progress<100"
-            ></i>
+              style="color: #f56c6c"
+            />
           </div>
         </div>
       </div>
     </div>
     <div class="upload-btn-box">
-      <el-button
-        type="primary"
-        @click="uploadFile"
-      >上传</el-button>
+      <el-button type="primary" @click="uploadFile">
+        上传
+      </el-button>
     </div>
   </div>
 </template>
 
 <script>
+import sparkMD5 from 'spark-md5'
 import {
   isGif,
   isPng,
@@ -82,52 +68,51 @@ import {
   createFileChunk,
   calculateHashWorker,
   calculateHashIdle,
-  calculateHashSample,
+  calculateHashSample
 } from '../utils'
-import sparkMD5 from 'spark-md5'
 // 文件切成单片的颗粒度
 // const CHUNK_SIZE = 0.1 * 1024 * 1024 //100KB/片
-const CHUNK_SIZE = 10 * 1024 * 1024 //10M/片
+const CHUNK_SIZE = 10 * 1024 * 1024 // 10M/片
 // 此处切片区块写死,可以实现响应式设置，使网速利用率最大化(待优化功能)
 // 实现原理：TCP慢启动，先上传一个初始区块，比如10KB根据上传成功时间，决定下一个区块20KB/50KB...
 // 再下一个一样的逻辑，可能变成100KB/200KB 使区块大小和网速达到更高的匹配度
 export default {
-  mounted() {
-    this.bindEvents()
-  },
-  data() {
+  data () {
     return {
       file: null,
       // uploadProgress: 0,
       hashProgress: 0,
       chunks: [],
-      hash: '',
+      hash: ''
     }
   },
   computed: {
-    cubeWidth() {
+    cubeWidth () {
       return Math.ceil(Math.sqrt(this.chunks.length)) * 16
     },
     // 实现网格进度条
-    uploadProgress() {
+    uploadProgress () {
       if (!this.file || this.chunks.length) {
         return 0
       }
       const loaded = this.chunks.map(
         // 累加
-        (item) =>
+        item =>
           item.chunk.size + item.progress.reduce((acc, cur) => acc + cur, 0)
       )
       return Number(((loaded * 100) / this.file.size).toFixed(2))
-    },
+    }
+  },
+  mounted () {
+    this.bindEvents()
   },
   methods: {
     // 根据业务需求 增加图片格式的判断
-    async isImage(file) {
+    async isImage (file) {
       return (await isGif(file)) || (await isPng(file)) || (await isJpg(file))
     },
     // 提交请求 发送文件到后端
-    async uploadFile() {
+    async uploadFile () {
       console.log(this.file, 'file')
       if (!this.file) {
         return
@@ -168,10 +153,10 @@ export default {
 
       // 问一下后端，文件是否上传过，如果没有，是否存在切片
       const {
-        data: { uploaded, uploadedList },
+        data: { uploaded, uploadedList }
       } = await this.$http.post('/checkfile', {
         hash: this.hash,
-        ext: this.file.name.split('.').pop(),
+        ext: this.file.name.split('.').pop()
       })
       // 秒传
       if (uploaded) {
@@ -189,7 +174,7 @@ export default {
           hash: this.hash,
           index,
           chunk: chunk.file,
-          progress: uploadedList.indexOf(name) > -1 ? 100 : 0,
+          progress: uploadedList.includes(name) ? 100 : 0
         }
       })
 
@@ -198,13 +183,13 @@ export default {
     },
 
     // 文件上传方案2--切片方式
-    async uploadChunks(uploadedList = []) {
+    async uploadChunks (uploadedList = []) {
       console.log(this.chunks, 'chunks')
       console.log(uploadedList, 'uploadedList')
       // 发请求
       const requests = this.chunks
-        .filter((chunk) => uploadedList.indexOf(chunk.name) == -1)
-        // 获取formData数据
+        .filter(chunk => !uploadedList.includes(chunk.name))
+      // 获取formData数据
         .map((chunk, index) => {
           // 转成promise
           const form = new FormData()
@@ -235,16 +220,16 @@ export default {
       await this.mergeRequest()
     },
     // 合并每个切片的uploadfile请求
-    async mergeRequest() {
+    async mergeRequest () {
       await this.$http.post('/mergefile', {
         ext: this.file.name.split('.').pop(),
         size: CHUNK_SIZE,
-        hash: this.hash,
+        hash: this.hash
       })
     },
 
     // 并发控制和上传报错重试功能实现
-    async sendRequest(chunks, limit = 4) {
+    async sendRequest (chunks, limit = 4) {
       // 并发控制逻辑处理
       // limit限制并发数为4
       // 虽然浏览器有请求限制，但是并发量还是会一次发起全部pending
@@ -263,7 +248,6 @@ export default {
           const task = chunks.shift()
           if (task) {
             const { form, index, error } = task
-
             try {
               await this.$http.post('/uploadfile', form, {
                 onUploadProgress: (progress) => {
@@ -271,9 +255,9 @@ export default {
                   this.chunks[index].progress = Number(
                     ((progress.loaded / progress.total) * 100).toFixed(2)
                   )
-                },
+                }
               })
-              if (counter == len - 1) {
+              if (counter === len - 1) {
                 // 最后一个任务
                 resolve()
               } else {
@@ -305,13 +289,15 @@ export default {
     },
 
     // 监听文件上传  点击文件上传功能实现
-    handleFileChange(e) {
+    handleFileChange (e) {
       const [file] = e.target.files
-      if (!file) return
+      if (!file) {
+        return
+      }
       this.file = file
     },
     // 拖拽文件上传功能实现
-    bindEvents() {
+    bindEvents () {
       const drag = this.$refs.drag
       drag.addEventListener('dragover', (e) => {
         drag.style.borderColor = 'red'
@@ -327,7 +313,7 @@ export default {
         this.file = fileList[0]
         e.preventDefault()
       })
-    },
+    }
     // 文件上传方案1--正常整文件上传
     // async uploadUnchunks() {
     //   const form = new FormData()
@@ -355,55 +341,53 @@ export default {
     //       this.$message.error(err ? err : '上传失败')
     //     })
     // },
-  },
+  }
 }
 </script>
 <style lang="scss" scoped>
 .upload {
-  padding: 30px;
-  .drag {
-    width: 100%;
-    height: 150px;
-    border: 2px dashed #eee;
-    text-align: center;
-    line-height: 150px;
-    // &:hover {
-    //   border-color: red;
-    // }
-  }
-  .cube-container {
-    .cube {
-      width: 14px;
-      height: 14px;
-      line-height: 12px;
-      border: 1px black solid;
-      background: #eee;
-      float: left;
-      .success {
-        background: #67c23a;
-      }
-      .uploading {
-        background: #409eff;
-      }
-      .error {
-        background: #f56c6c;
-      }
-    }
-  }
-  /deep/ .el-progress {
-    .el-progress-bar__innerText {
-      color: black;
-    }
-    margin-top: 20px;
-  }
-  .upload-btn-box {
-    text-align: center;
-    button {
-      width: 100px;
-      margin-top: 20px;
-    }
-  }
+	padding: 30px;
+	.drag {
+		width: 100%;
+		height: 150px;
+		border: 2px dashed #eee;
+		text-align: center;
+		line-height: 150px;
+		// &:hover {
+		//   border-color: red;
+		// }
+	}
+	.cube-container {
+		.cube {
+			width: 14px;
+			height: 14px;
+			line-height: 12px;
+			border: 1px black solid;
+			background: #eee;
+			float: left;
+			.success {
+				background: #67c23a;
+			}
+			.uploading {
+				background: #409eff;
+			}
+			.error {
+				background: #f56c6c;
+			}
+		}
+	}
+	/deep/ .el-progress {
+		.el-progress-bar__innerText {
+			color: black;
+		}
+		margin-top: 20px;
+	}
+	.upload-btn-box {
+		text-align: center;
+		button {
+			width: 100px;
+			margin-top: 20px;
+		}
+	}
 }
 </style>
-
-

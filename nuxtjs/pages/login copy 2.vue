@@ -6,12 +6,11 @@
         label-width="auto"
       >
         <el-form-item label="用户名">
-          <el-input placeholder="请输入用户名"></el-input>
+          <el-input placeholder="请输入用户名" />
         </el-form-item>
         <el-form-item label="密码">
-          <el-input placeholder="请输入密码"></el-input>
+          <el-input placeholder="请输入密码" />
         </el-form-item>
-
       </el-form>
     </div>
   </div>
@@ -19,7 +18,7 @@
 
 <script>
 export default {
-  layout: 'login',
+  layout: 'login'
 }
 </script>
 

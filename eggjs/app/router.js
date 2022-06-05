@@ -5,7 +5,7 @@
 module.exports = app => {
   const { router, controller } = app
   // 针对需要token的页面 设置jwt,会在header携带token
-  const jwt = app.middleware.jwt({ app })
+  const jwt = app.middleware.jwt(app)
   // 首页
   router.get('/', controller.home.index)
   // 验证码

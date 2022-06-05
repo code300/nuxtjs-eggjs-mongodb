@@ -9,7 +9,7 @@ module.exports = {
     meta: [
       { charset: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      { hid: 'description', name: 'description', content: process.env.npm_package_description || ''  }
+      { hid: 'description', name: 'description', content: process.env.npm_package_description || '' }
     ],
     link: [
       { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }
@@ -41,7 +41,7 @@ module.exports = {
   // Modules: https://go.nuxtjs.dev/config-modules
   modules: [
     '@nuxtjs/proxy',
-    '@nuxtjs/axios',
+    '@nuxtjs/axios'
   ],
   axios: {
     // 开启代理 (如果需要判断线上线下环境，可以通过 process.env.NODE_ENV !== 'production' 来判断)
@@ -53,15 +53,15 @@ module.exports = {
     // credentials: true
   },
   proxy: {
-    "/api": {
-      target: "http://localhost:7001",
+    '/api': {
+      target: 'http://localhost:7001',
       secure: false,
       // changeOrigin: true,
       pathRewrite: {
         // 单个配置是否跨域
         // changeOrigin: true
         // 把 '/api' 替换成 '/'，具体需要替换为 '' 还是 '/' 看自己习惯
-        "^/api": "/"
+        '^/api': '/'
       }
     }
   },
@@ -77,8 +77,8 @@ module.exports = {
 
   // Build Configuration: https://go.nuxtjs.dev/config-build
   build: {
-    transpile: [/^element-ui/],
+    transpile: [/^element-ui/]
     // 防止重复打包
     // vendor: ['axios']
-  },
+  }
 }
