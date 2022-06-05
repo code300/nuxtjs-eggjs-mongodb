@@ -90,6 +90,7 @@ html {
 }
 .el-container {
 	::v-deep .el-header {
+		background-color: #ff7d24;
 		.el-menu-item {
 			.logo {
 				height: 40px;
